@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Уютный Квадрат">
+  <rect x="4" y="4" width="40" height="40" rx="12" fill="#B08968"/>
+  <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#g)" opacity="0.25"/>
+  <path d="M14 26 L24 16 L34 26 V34 a2 2 0 0 1 -2 2 H16 a2 2 0 0 1 -2 -2 Z" fill="#FBF7F0"/>
+  <rect x="21" y="28" width="6" height="8" rx="1" fill="#B08968"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#8C6A4E"/>
+    </linearGradient>
+  </defs>
+</svg>

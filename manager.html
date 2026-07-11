@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Панель менеджера — Уютный Квадрат</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/manager.css" />
+</head>
+<body class="mgr-body">
+  <!-- Экран входа -->
+  <div class="login" id="login">
+    <form class="login-card" id="login-form">
+      <img src="assets/img/logo.svg" alt="" width="52" height="52" />
+      <h1>Панель менеджера</h1>
+      <p>Введите PIN для доступа к бронированиям</p>
+      <input type="password" id="login-pin" inputmode="numeric" placeholder="PIN-код" autocomplete="off" />
+      <button type="submit" class="btn btn-primary btn-block">Войти</button>
+      <p class="login-err" id="login-err"></p>
+      <a href="index.html" class="login-back">← На сайт</a>
+    </form>
+  </div>
+
+  <!-- Панель -->
+  <div class="mgr" id="mgr" hidden>
+    <header class="mgr-header">
+      <div class="mgr-header-inner">
+        <a href="index.html" class="brand">
+          <img src="assets/img/logo.svg" alt="" width="34" height="34" />
+          <span class="brand-name">Уютный<span>Квадрат</span></span>
+        </a>
+        <span class="mgr-badge">Бронирования</span>
+        <div class="mgr-header-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-add">+ Бронь</button>
+          <button class="btn btn-ghost btn-sm" id="btn-export">Экспорт CSV</button>
+          <button class="btn btn-ghost btn-sm" id="btn-logout">Выйти</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="mgr-main container">
+      <div class="mgr-notice" id="mgr-notice">
+        ⓘ Данные хранятся локально в этом браузере. Для общей базы на нескольких устройствах нужен серверный вариант.
+        <button class="mgr-notice-x" id="notice-x" aria-label="Скрыть">×</button>
+      </div>
+
+      <!-- Сводка -->
+      <section class="stat-row" id="stat-row"></section>
+
+      <!-- Панель управления -->
+      <section class="toolbar">
+        <div class="toolbar-filters" id="status-filters">
+          <button class="chip is-active" data-status="all">Все</button>
+          <button class="chip" data-status="new">Новые</button>
+          <button class="chip" data-status="confirmed">Подтверждённые</button>
+          <button class="chip" data-status="checked_in">Заселены</button>
+          <button class="chip" data-status="cancelled">Отменённые</button>
+        </div>
+        <div class="toolbar-right">
+          <input type="search" id="search" placeholder="Поиск по имени, телефону, №…" />
+          <button class="link-more" id="btn-demo">Демо-данные</button>
+          <button class="link-more danger" id="btn-clear">Очистить всё</button>
+        </div>
+      </section>
+
+      <!-- Таблица -->
+      <section class="table-wrap">
+        <table class="mgr-table">
+          <thead>
+            <tr>
+              <th>№ / Создана</th>
+              <th>Квартира</th>
+              <th>Даты</th>
+              <th>Гость</th>
+              <th>Контакты</th>
+              <th>Сумма</th>
+              <th>Статус</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="mgr-tbody"></tbody>
+        </table>
+        <div class="mgr-empty" id="mgr-empty" hidden>
+          <span>🗂️</span>
+          <p>Броней пока нет</p>
+          <small>Заявки с сайта появятся здесь. Можно загрузить демо-данные для примера.</small>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Модалка добавления/детали брони -->
+  <div class="modal" id="booking-modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-dialog mgr-dialog" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close aria-label="Закрыть">×</button>
+      <div class="mgr-dialog-body">
+        <h3 id="bm-title">Новая бронь</h3>
+        <form id="bm-form">
+          <div class="field">
+            <label for="bm-apartment">Квартира</label>
+            <select id="bm-apartment" required></select>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="bm-checkin">Заезд</label><input type="date" id="bm-checkin" required /></div>
+            <div class="field"><label for="bm-checkout">Выезд</label><input type="date" id="bm-checkout" required /></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="bm-name">Имя гостя</label><input type="text" id="bm-name" required /></div>
+            <div class="field"><label for="bm-guests">Гостей</label><input type="number" id="bm-guests" min="1" max="10" value="2" /></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="bm-phone">Телефон</label><input type="tel" id="bm-phone" required /></div>
+            <div class="field"><label for="bm-email">E-mail</label><input type="email" id="bm-email" /></div>
+          </div>
+          <div class="field"><label for="bm-comment">Комментарий</label><textarea id="bm-comment" rows="2"></textarea></div>
+          <div class="field"><label for="bm-status">Статус</label>
+            <select id="bm-status">
+              <option value="new">Новая</option>
+              <option value="confirmed">Подтверждена</option>
+              <option value="checked_in">Заселён</option>
+              <option value="cancelled">Отменена</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Сохранить</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="alert" hidden></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/manager.js"></script>
+</body>
+</html>

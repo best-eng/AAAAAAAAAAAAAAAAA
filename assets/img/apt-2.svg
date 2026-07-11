@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Интерьер апартаментов">
+  <defs>
+    <linearGradient id="wall1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9E6DC"/>
+      <stop offset="1" stop-color="#D8DAC9"/>
+    </linearGradient>
+    <linearGradient id="sky1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DDEBD3"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.4"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#wall1)"/>
+  <rect x="0" y="470" width="800" height="130" fill="#B7A98A"/>
+  <rect x="0" y="470" width="800" height="10" fill="#000000" opacity="0.06"/>
+  <!-- window -->
+  <rect x="540" y="90" width="200" height="260" rx="10" fill="#ffffff" opacity="0.55"/>
+  <rect x="552" y="102" width="176" height="236" rx="6" fill="url(#sky1)"/>
+  <line x1="640" y1="102" x2="640" y2="338" stroke="#ffffff" stroke-width="8" opacity="0.8"/>
+  <line x1="552" y1="220" x2="728" y2="220" stroke="#ffffff" stroke-width="8" opacity="0.8"/>
+  <!-- floor lamp -->
+  <line x1="110" y1="230" x2="110" y2="470" stroke="#8FA07B" stroke-width="6" opacity="0.75"/>
+  <path d="M80 230 h60 l-14 -46 h-32 z" fill="#8FA07B" opacity="0.5"/>
+  <!-- plant -->
+  <rect x="470" y="410" width="46" height="60" rx="8" fill="#8FA07B" opacity="0.6"/>
+  <path d="M493 410 C 470 360 470 330 493 300 C 516 330 516 360 493 410 Z" fill="#7f9b6a" opacity="0.75"/>
+  
+        <rect x="150" y="370" width="360" height="90" rx="12" fill="#8FA07B"/>
+        <rect x="150" y="330" width="70" height="130" rx="10" fill="#8FA07B" opacity="0.9"/>
+        <rect x="230" y="350" width="120" height="40" rx="12" fill="#ffffff" opacity="0.5"/>
+        <rect x="360" y="350" width="120" height="40" rx="12" fill="#ffffff" opacity="0.4"/>
+  <!-- rug -->
+  <ellipse cx="360" cy="500" rx="230" ry="34" fill="#8FA07B" opacity="0.18"/>
+</svg>

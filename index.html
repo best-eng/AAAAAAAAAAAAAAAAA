@@ -1,13 +1,375 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BountyW - Мониторинг токенов Solana</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Уютный Квадрат — посуточная аренда квартир</title>
+  <meta name="description" content="Уютный Квадрат — посуточная аренда чистых и уютных квартир. Онлайн-бронирование, заезд в день обращения, поддержка 24/7." />
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- ===== Header ===== -->
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="#top" class="brand" aria-label="Уютный Квадрат — на главную">
+        <img src="assets/img/logo.svg" alt="" width="40" height="40" />
+        <span class="brand-name">Уютный<span>Квадрат</span></span>
+      </a>
+
+      <nav class="nav" id="nav">
+        <a href="#apartments">Квартиры</a>
+        <a href="#advantages">Преимущества</a>
+        <a href="#how">Как забронировать</a>
+        <a href="#reviews">Отзывы</a>
+        <a href="#contacts">Контакты</a>
+      </nav>
+
+      <div class="header-actions">
+        <a href="#" class="header-phone" data-config="phone-link"></a>
+        <a href="#booking" class="btn btn-primary btn-sm">Забронировать</a>
+        <button class="burger" id="burger" aria-label="Меню" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===== Hero ===== -->
+    <section class="hero">
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <span class="eyebrow">Посуточная аренда квартир</span>
+          <h1 class="hero-title">Дом вдали от дома —<br /><em>уютно, чисто, с душой</em></h1>
+          <p class="hero-text">
+            Квартиры с домашней атмосферой в лучших районах города. Заезжайте в день обращения,
+            бронируйте онлайн за пару минут и чувствуйте себя как дома.
+          </p>
+          <div class="hero-cta">
+            <a href="#apartments" class="btn btn-primary">Смотреть квартиры</a>
+            <a href="#booking" class="btn btn-ghost">Забронировать →</a>
+          </div>
+          <ul class="hero-stats">
+            <li><strong>120+</strong><span>гостей в месяц</span></li>
+            <li><strong>4.9</strong><span>средняя оценка</span></li>
+            <li><strong>24/7</strong><span>поддержка</span></li>
+          </ul>
+        </div>
+        <div class="hero-media">
+          <img src="assets/img/hero.svg" alt="Уютная гостиная квартиры" />
+          <div class="hero-badge">
+            <span class="dot"></span> Свободно сегодня
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Advantages ===== -->
+    <section class="section" id="advantages">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">Почему выбирают нас</span>
+          <h2>Всё для комфортного проживания</h2>
+        </div>
+        <div class="grid grid-4 advantages">
+          <article class="feature-card">
+            <div class="feature-ico">🧹</div>
+            <h3>Идеальная чистота</h3>
+            <p>Профессиональная уборка и свежий текстиль перед каждым заездом.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico">⚡</div>
+            <h3>Заезд сегодня</h3>
+            <p>Подтверждаем бронь за 15 минут и заселяем в день обращения.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico">🔑</div>
+            <h3>Онлайн-заселение</h3>
+            <p>Бесконтактный заезд по коду — приезжайте в удобное время.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-ico">💬</div>
+            <h3>Поддержка 24/7</h3>
+            <p>Менеджер на связи круглосуточно и поможет с любым вопросом.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Apartments ===== -->
+    <section class="section section-alt" id="apartments">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">Каталог</span>
+          <h2>Наши квартиры</h2>
+          <p class="section-sub">Выберите подходящий вариант — все цены указаны за сутки.</p>
+        </div>
+
+        <div class="filters" id="filters" role="tablist" aria-label="Фильтр квартир">
+          <button class="chip is-active" data-filter="all">Все</button>
+          <button class="chip" data-filter="1">1 комната</button>
+          <button class="chip" data-filter="2">2 комнаты</button>
+          <button class="chip" data-filter="budget">До 3500 ₽</button>
+          <button class="chip" data-filter="premium">Премиум</button>
+        </div>
+
+        <div class="grid grid-3" id="apartments-grid"><!-- JS --></div>
+      </div>
+    </section>
+
+    <!-- ===== How it works ===== -->
+    <section class="section" id="how">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">Всё просто</span>
+          <h2>Как забронировать</h2>
+        </div>
+        <div class="grid grid-3 steps">
+          <div class="step">
+            <span class="step-num">1</span>
+            <h3>Выберите квартиру</h3>
+            <p>Посмотрите каталог и выберите вариант по душе и бюджету.</p>
+          </div>
+          <div class="step">
+            <span class="step-num">2</span>
+            <h3>Оставьте заявку</h3>
+            <p>Заполните форму с датами — это займёт меньше минуты.</p>
+          </div>
+          <div class="step">
+            <span class="step-num">3</span>
+            <h3>Заезжайте</h3>
+            <p>Менеджер подтвердит бронь и пришлёт детали заселения.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Booking ===== -->
+    <section class="section section-alt" id="booking">
+      <div class="container">
+        <div class="booking-card">
+          <div class="booking-info">
+            <span class="eyebrow">Бронирование</span>
+            <h2>Забронировать квартиру</h2>
+            <p>Оставьте заявку — менеджер свяжется с вами и подтвердит бронь. Предоплата не требуется.</p>
+            <ul class="booking-perks">
+              <li>✓ Бесплатная отмена за 24 часа</li>
+              <li>✓ Без скрытых комиссий</li>
+              <li>✓ Ответ в течение 15 минут</li>
+            </ul>
+            <div class="booking-contact">
+              <span>Есть вопросы?</span>
+              <a href="#" data-config="phone-link" class="booking-phone"></a>
+            </div>
+          </div>
+
+          <form class="booking-form" id="booking-form" novalidate>
+            <div class="field">
+              <label for="bf-apartment">Квартира</label>
+              <select id="bf-apartment" name="apartment" required></select>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="bf-checkin">Заезд</label>
+                <input type="date" id="bf-checkin" name="checkin" required />
+              </div>
+              <div class="field">
+                <label for="bf-checkout">Выезд</label>
+                <input type="date" id="bf-checkout" name="checkout" required />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="bf-guests">Гостей</label>
+                <select id="bf-guests" name="guests" required>
+                  <option value="1">1 гость</option>
+                  <option value="2" selected>2 гостя</option>
+                  <option value="3">3 гостя</option>
+                  <option value="4">4 гостя</option>
+                  <option value="5">5 гостей</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="bf-name">Ваше имя</label>
+                <input type="text" id="bf-name" name="name" placeholder="Как к вам обращаться" required />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="bf-phone">Телефон</label>
+                <input type="tel" id="bf-phone" name="phone" placeholder="+7 (___) ___-__-__" required />
+              </div>
+              <div class="field">
+                <label for="bf-email">E-mail <span class="muted">(необязательно)</span></label>
+                <input type="email" id="bf-email" name="email" placeholder="you@mail.ru" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="bf-comment">Комментарий <span class="muted">(необязательно)</span></label>
+              <textarea id="bf-comment" name="comment" rows="2" placeholder="Пожелания, время заезда…"></textarea>
+            </div>
+
+            <div class="booking-summary" id="booking-summary" hidden>
+              <span id="booking-nights"></span>
+              <strong id="booking-total"></strong>
+            </div>
+
+            <label class="consent">
+              <input type="checkbox" id="bf-consent" required />
+              <span>Согласен на обработку персональных данных</span>
+            </label>
+
+            <button type="submit" class="btn btn-primary btn-block">Отправить заявку</button>
+            <p class="form-note" id="form-note" role="status"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Reviews ===== -->
+    <section class="section" id="reviews">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">Отзывы</span>
+          <h2>Что говорят гости</h2>
+        </div>
+        <div class="grid grid-3 reviews">
+          <blockquote class="review">
+            <div class="stars">★★★★★</div>
+            <p>«Квартира даже лучше, чем на фото. Чисто, уютно, всё работает. Заселили быстро, менеджер очень вежливый.»</p>
+            <footer><strong>Анна</strong> · командировка</footer>
+          </blockquote>
+          <blockquote class="review">
+            <div class="stars">★★★★★</div>
+            <p>«Бронировали на выходные семьёй. Детская кроватка, парковка, рядом парк — всё как обещали. Спасибо!»</p>
+            <footer><strong>Дмитрий</strong> · с семьёй</footer>
+          </blockquote>
+          <blockquote class="review">
+            <div class="stars">★★★★★</div>
+            <p>«Идеально для романтического уикенда. Атмосферный лофт, приятные мелочи. Обязательно вернёмся.»</p>
+            <footer><strong>Мария</strong> · отдых</footer>
+          </blockquote>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FAQ ===== -->
+    <section class="section section-alt" id="faq">
+      <div class="container container-narrow">
+        <div class="section-head">
+          <span class="eyebrow">Вопросы</span>
+          <h2>Частые вопросы</h2>
+        </div>
+        <div class="faq" id="faq">
+          <details class="faq-item">
+            <summary>Какие документы нужны для заселения?</summary>
+            <p>Достаточно паспорта. Мы работаем официально и предоставляем чек и договор по запросу.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Во сколько заезд и выезд?</summary>
+            <p>Стандартный заезд с 14:00, выезд до 12:00. Ранний заезд и поздний выезд — по договорённости.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Нужна ли предоплата?</summary>
+            <p>Для брони предоплата не требуется. Оплата — при заселении наличными или картой.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Можно ли с животными?</summary>
+            <p>В части квартир — можно. Отметьте это в комментарии к заявке, и мы подберём вариант.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Contacts ===== -->
+    <section class="section" id="contacts">
+      <div class="container">
+        <div class="contacts">
+          <div class="contacts-info">
+            <span class="eyebrow">Контакты</span>
+            <h2>Свяжитесь с нами</h2>
+            <p>Ответим на вопросы и поможем выбрать квартиру под ваши даты.</p>
+            <ul class="contacts-list">
+              <li><span>Телефон</span><a href="#" data-config="phone-link"></a></li>
+              <li><span>E-mail</span><a href="#" data-config="email-link"></a></li>
+              <li><span>Адрес</span><span data-config="address"></span></li>
+              <li><span>Режим работы</span><span data-config="workHours"></span></li>
+            </ul>
+            <div class="contacts-social">
+              <a href="#" data-config="telegram" target="_blank" rel="noopener">Telegram</a>
+              <a href="#" data-config="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+            </div>
+          </div>
+          <div class="contacts-map" aria-label="Карта расположения">
+            <div class="map-placeholder">
+              <span>📍</span>
+              <p data-config="address"></p>
+              <small>Точный адрес квартиры сообщаем после подтверждения брони.</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="#top" class="brand">
+          <img src="assets/img/logo.svg" alt="" width="36" height="36" />
+          <span class="brand-name">Уютный<span>Квадрат</span></span>
+        </a>
+        <p>Посуточная аренда уютных квартир с домашней атмосферой.</p>
+      </div>
+      <nav class="footer-nav">
+        <a href="#apartments">Квартиры</a>
+        <a href="#advantages">Преимущества</a>
+        <a href="#booking">Бронирование</a>
+        <a href="#contacts">Контакты</a>
+        <a href="manager.html">Панель менеджера</a>
+      </nav>
+      <div class="footer-contact">
+        <a href="#" data-config="phone-link" class="footer-phone"></a>
+        <a href="#" data-config="email-link"></a>
+        <span data-config="address"></span>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <span>© <span id="year"></span> Уютный Квадрат. Все права защищены.</span>
+      <span>Дизайн-редизайн · демо-проект</span>
+    </div>
+  </footer>
+
+  <!-- ===== Apartment modal ===== -->
+  <div class="modal" id="apt-modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close" data-close aria-label="Закрыть">×</button>
+      <div class="modal-media"><img id="modal-img" src="" alt="" /></div>
+      <div class="modal-body">
+        <h3 id="modal-title"></h3>
+        <p class="modal-sub" id="modal-sub"></p>
+        <div class="modal-specs" id="modal-specs"></div>
+        <p id="modal-desc"></p>
+        <ul class="modal-features" id="modal-features"></ul>
+        <div class="modal-foot">
+          <div class="modal-price"><strong id="modal-price"></strong><span>/ сутки</span></div>
+          <button class="btn btn-primary" id="modal-book">Забронировать</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Toast ===== -->
+  <div class="toast" id="toast" role="alert" hidden></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+</body>
 </html>
