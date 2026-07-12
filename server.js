@@ -174,6 +174,32 @@ app.post('/api/bookings/seed-demo', auth.requireAuth, (req, res) => {
   res.json({ ok: true, added });
 });
 
+// --- Telegram webhook: обработка нажатий на кнопки под уведомлением ---
+const TG_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
+app.post('/api/telegram/webhook', (req, res) => {
+  // Проверяем секрет, который Telegram шлёт в заголовке (задаётся при setWebhook).
+  if (!TG_WEBHOOK_SECRET || req.get('X-Telegram-Bot-Api-Secret-Token') !== TG_WEBHOOK_SECRET) {
+    return res.sendStatus(403);
+  }
+  res.sendStatus(200); // Telegram ждёт быстрый ответ; действия — асинхронно.
+
+  const cq = req.body && req.body.callback_query;
+  if (!cq || !cq.data) return;
+
+  const m = /^s:(.+):([cix])$/.exec(cq.data);
+  if (!m) { notify.answerCallback(cq.id, 'Неизвестная команда'); return; }
+
+  const id = m[1];
+  const status = notify.CODE_TO_STATUS[m[2]];
+  const booking = db.getBooking(id);
+  if (!booking) { notify.answerCallback(cq.id, 'Бронь не найдена'); return; }
+
+  db.setStatus(id, status);
+  const updated = db.getBooking(id);
+  notify.answerCallback(cq.id, 'Статус: ' + (notify.STATUS_LABEL[status] || status));
+  if (cq.message) notify.updateBookingMessage(cq.message.chat.id, cq.message.message_id, updated);
+});
+
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 // ================= Static =================
