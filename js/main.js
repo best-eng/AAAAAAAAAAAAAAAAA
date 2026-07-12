@@ -250,27 +250,65 @@
     ].join('\n');
   }
 
-  function sendEmail(b) {
-    // Вариант 1: Web3Forms (если задан ключ) — заявка приходит на почту без сервера.
-    if (CFG.web3formsKey) {
-      return fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          access_key: CFG.web3formsKey,
-          subject: 'Бронь ' + b.id + ' — ' + b.apartmentTitle,
-          from_name: b.name,
-          replyto: b.email || undefined,
-          message: bookingText(b)
-        })
-      }).then(function (r) { return r.ok; }).catch(function () { return false; });
-    }
-    // Вариант 2: mailto — открываем почтовый клиент с заполненным письмом.
+  var escHtml = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>]/g, function (m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m];
+    });
+  };
+
+  // Канал: Telegram (Bot API напрямую из браузера)
+  function sendTelegram(b) {
+    var text =
+      '<b>🏠 Новая бронь — ' + escHtml(CFG.brand || 'Уютный Квадрат') + '</b>\n' +
+      '№ ' + escHtml(b.id) + '\n\n' +
+      '<b>Квартира:</b> ' + escHtml(b.apartmentTitle) + '\n' +
+      '<b>Заезд:</b> ' + b.checkin + '  <b>Выезд:</b> ' + b.checkout + '  (' + b.nights + ' ноч.)\n' +
+      '<b>Гостей:</b> ' + escHtml(b.guests) + '\n' +
+      '<b>Имя:</b> ' + escHtml(b.name) + '\n' +
+      '<b>Телефон:</b> ' + escHtml(b.phone) + '\n' +
+      '<b>E-mail:</b> ' + escHtml(b.email || '—') + '\n' +
+      '<b>Комментарий:</b> ' + escHtml(b.comment || '—') + '\n' +
+      '<b>Итого:</b> ' + money(b.total);
+    return fetch('https://api.telegram.org/bot' + CFG.telegramBotToken + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: CFG.telegramChatId, text: text, parse_mode: 'HTML' })
+    }).then(function (r) { return r.ok; }).catch(function () { return false; });
+  }
+
+  // Канал: e-mail через Web3Forms
+  function sendWeb3Forms(b) {
+    return fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        access_key: CFG.web3formsKey,
+        subject: 'Бронь ' + b.id + ' — ' + b.apartmentTitle,
+        from_name: b.name,
+        replyto: b.email || undefined,
+        message: bookingText(b)
+      })
+    }).then(function (r) { return r.ok; }).catch(function () { return false; });
+  }
+
+  // Запасной канал: открыть почтовый клиент гостя
+  function mailtoFallback(b) {
     var url = 'mailto:' + CFG.email +
       '?subject=' + encodeURIComponent('Бронь ' + b.id + ' — ' + b.apartmentTitle) +
       '&body=' + encodeURIComponent(bookingText(b));
     window.location.href = url;
     return Promise.resolve(true);
+  }
+
+  // Отправка заявки во все настроенные каналы (Telegram + email); иначе mailto.
+  function deliverBooking(b) {
+    var tasks = [];
+    if (CFG.telegramBotToken && CFG.telegramChatId) tasks.push(sendTelegram(b));
+    if (CFG.web3formsKey) tasks.push(sendWeb3Forms(b));
+    if (!tasks.length) return mailtoFallback(b);
+    return Promise.all(tasks).then(function (res) {
+      return res.some(function (ok) { return ok; });
+    });
   }
 
   function initBookingForm() {
@@ -295,7 +333,7 @@
       var btn = qs('button[type="submit"]', form);
       btn.disabled = true; btn.textContent = 'Отправляем…';
 
-      sendEmail(booking).then(function (ok) {
+      deliverBooking(booking).then(function (ok) {
         btn.disabled = false; btn.textContent = 'Отправить заявку';
         if (ok) {
           note.textContent = 'Заявка №' + booking.id + ' отправлена! Менеджер свяжется с вами.';
