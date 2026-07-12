@@ -18,8 +18,9 @@
     <form class="login-card" id="login-form">
       <img src="assets/img/logo.svg" alt="" width="52" height="52" />
       <h1>Панель менеджера</h1>
-      <p>Введите PIN для доступа к бронированиям</p>
-      <input type="password" id="login-pin" inputmode="numeric" placeholder="PIN-код" autocomplete="off" />
+      <p>Войдите, чтобы управлять бронями</p>
+      <input type="text" id="login-user" placeholder="Логин" autocomplete="username" />
+      <input type="password" id="login-pass" placeholder="Пароль" autocomplete="current-password" />
       <button type="submit" class="btn btn-primary btn-block">Войти</button>
       <p class="login-err" id="login-err"></p>
       <a href="index.html" class="login-back">← На сайт</a>
@@ -45,7 +46,7 @@
 
     <main class="mgr-main container">
       <div class="mgr-notice" id="mgr-notice">
-        ⓘ Данные хранятся локально в этом браузере. Для общей базы на нескольких устройствах нужен серверный вариант.
+        ⓘ Брони хранятся в общей базе на сервере — они видны всем менеджерам с любого устройства.
         <button class="mgr-notice-x" id="notice-x" aria-label="Скрыть">×</button>
       </div>
 
@@ -136,7 +137,6 @@
   <div class="toast" id="toast" role="alert" hidden></div>
 
   <script src="js/config.js"></script>
-  <script src="js/data.js"></script>
   <script src="js/manager.js"></script>
 </body>
 </html>

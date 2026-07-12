@@ -1,19 +1,18 @@
 /* ============================================================
-   Уютный Квадрат — логика публичного сайта
+   Уютный Квадрат — логика публичного сайта (клиент API)
    ============================================================ */
 (function () {
   'use strict';
 
   var CFG = window.UK_CONFIG || {};
-  var APTS = window.APARTMENTS || [];
-  var STORAGE_KEY = 'uk_bookings';
+  var APTS = [];
 
   var money = function (n) { return n.toLocaleString('ru-RU') + ' ₽'; };
   var digits = function (s) { return (s || '').replace(/[^\d+]/g, ''); };
   var qs = function (sel, ctx) { return (ctx || document).querySelector(sel); };
   var qsa = function (sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); };
 
-  /* ---------- Подстановка контактов из конфига ---------- */
+  /* ---------- Контакты из конфига ---------- */
   function applyConfig() {
     var tel = digits(CFG.phone);
     qsa('[data-config="phone-link"]').forEach(function (el) {
@@ -206,109 +205,17 @@
     return ok;
   }
 
-  function collectBooking() {
-    var apt = APTS.find(function (a) { return a.id === qs('#bf-apartment').value; }) || {};
-    var n = nightsBetween(qs('#bf-checkin').value, qs('#bf-checkout').value);
+  function collectPayload() {
     return {
-      id: 'BK-' + Date.now().toString(36).toUpperCase(),
-      createdAt: new Date().toISOString(),
-      apartmentId: apt.id || '',
-      apartmentTitle: apt.title || '',
+      apartmentId: qs('#bf-apartment').value,
       checkin: qs('#bf-checkin').value,
       checkout: qs('#bf-checkout').value,
-      nights: n,
       guests: qs('#bf-guests').value,
       name: qs('#bf-name').value.trim(),
       phone: qs('#bf-phone').value.trim(),
       email: qs('#bf-email').value.trim(),
-      comment: qs('#bf-comment').value.trim(),
-      total: (apt.price || 0) * n,
-      status: 'new'
+      comment: qs('#bf-comment').value.trim()
     };
-  }
-
-  function saveLocal(b) {
-    try {
-      var list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      list.unshift(b);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    } catch (e) { /* localStorage может быть недоступен */ }
-  }
-
-  function bookingText(b) {
-    return [
-      'Новая заявка на бронирование — ' + (CFG.brand || 'Уютный Квадрат'),
-      '№ ' + b.id,
-      'Квартира: ' + b.apartmentTitle,
-      'Заезд: ' + b.checkin + '   Выезд: ' + b.checkout + '   (' + b.nights + ' ноч.)',
-      'Гостей: ' + b.guests,
-      'Имя: ' + b.name,
-      'Телефон: ' + b.phone,
-      'E-mail: ' + (b.email || '—'),
-      'Комментарий: ' + (b.comment || '—'),
-      'Итого: ' + money(b.total)
-    ].join('\n');
-  }
-
-  var escHtml = function (s) {
-    return String(s == null ? '' : s).replace(/[&<>]/g, function (m) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m];
-    });
-  };
-
-  // Канал: Telegram (Bot API напрямую из браузера)
-  function sendTelegram(b) {
-    var text =
-      '<b>🏠 Новая бронь — ' + escHtml(CFG.brand || 'Уютный Квадрат') + '</b>\n' +
-      '№ ' + escHtml(b.id) + '\n\n' +
-      '<b>Квартира:</b> ' + escHtml(b.apartmentTitle) + '\n' +
-      '<b>Заезд:</b> ' + b.checkin + '  <b>Выезд:</b> ' + b.checkout + '  (' + b.nights + ' ноч.)\n' +
-      '<b>Гостей:</b> ' + escHtml(b.guests) + '\n' +
-      '<b>Имя:</b> ' + escHtml(b.name) + '\n' +
-      '<b>Телефон:</b> ' + escHtml(b.phone) + '\n' +
-      '<b>E-mail:</b> ' + escHtml(b.email || '—') + '\n' +
-      '<b>Комментарий:</b> ' + escHtml(b.comment || '—') + '\n' +
-      '<b>Итого:</b> ' + money(b.total);
-    return fetch('https://api.telegram.org/bot' + CFG.telegramBotToken + '/sendMessage', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: CFG.telegramChatId, text: text, parse_mode: 'HTML' })
-    }).then(function (r) { return r.ok; }).catch(function () { return false; });
-  }
-
-  // Канал: e-mail через Web3Forms
-  function sendWeb3Forms(b) {
-    return fetch('https://api.web3forms.com/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({
-        access_key: CFG.web3formsKey,
-        subject: 'Бронь ' + b.id + ' — ' + b.apartmentTitle,
-        from_name: b.name,
-        replyto: b.email || undefined,
-        message: bookingText(b)
-      })
-    }).then(function (r) { return r.ok; }).catch(function () { return false; });
-  }
-
-  // Запасной канал: открыть почтовый клиент гостя
-  function mailtoFallback(b) {
-    var url = 'mailto:' + CFG.email +
-      '?subject=' + encodeURIComponent('Бронь ' + b.id + ' — ' + b.apartmentTitle) +
-      '&body=' + encodeURIComponent(bookingText(b));
-    window.location.href = url;
-    return Promise.resolve(true);
-  }
-
-  // Отправка заявки во все настроенные каналы (Telegram + email); иначе mailto.
-  function deliverBooking(b) {
-    var tasks = [];
-    if (CFG.telegramBotToken && CFG.telegramChatId) tasks.push(sendTelegram(b));
-    if (CFG.web3formsKey) tasks.push(sendWeb3Forms(b));
-    if (!tasks.length) return mailtoFallback(b);
-    return Promise.all(tasks).then(function (res) {
-      return res.some(function (ok) { return ok; });
-    });
   }
 
   function initBookingForm() {
@@ -327,25 +234,34 @@
         note.classList.add('err');
         return;
       }
-      var booking = collectBooking();
-      saveLocal(booking);
 
       var btn = qs('button[type="submit"]', form);
       btn.disabled = true; btn.textContent = 'Отправляем…';
 
-      deliverBooking(booking).then(function (ok) {
-        btn.disabled = false; btn.textContent = 'Отправить заявку';
-        if (ok) {
-          note.textContent = 'Заявка №' + booking.id + ' отправлена! Менеджер свяжется с вами.';
-          note.classList.add('ok');
-          toast('Заявка отправлена ✓');
-          form.reset();
-          initDates(); updateSummary();
-        } else {
-          note.textContent = 'Не удалось отправить автоматически. Позвоните нам: ' + CFG.phone;
+      fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(collectPayload())
+      })
+        .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+        .then(function (res) {
+          btn.disabled = false; btn.textContent = 'Отправить заявку';
+          if (res.ok && res.data.booking) {
+            note.textContent = 'Заявка №' + res.data.booking.id + ' отправлена! Менеджер свяжется с вами.';
+            note.classList.add('ok');
+            toast('Заявка отправлена ✓');
+            form.reset();
+            initDates(); updateSummary();
+          } else {
+            note.textContent = (res.data && res.data.error) || ('Не удалось отправить заявку. Позвоните нам: ' + CFG.phone);
+            note.classList.add('err');
+          }
+        })
+        .catch(function () {
+          btn.disabled = false; btn.textContent = 'Отправить заявку';
+          note.textContent = 'Ошибка сети. Проверьте соединение или позвоните: ' + CFG.phone;
           note.classList.add('err');
-        }
-      });
+        });
     });
   }
 
@@ -361,12 +277,23 @@
   }
 
   /* ---------- Init ---------- */
-  document.addEventListener('DOMContentLoaded', function () {
+  function boot() {
     applyConfig();
     initBurger();
-    renderApartments('all');
-    initFilters();
     initModal();
-    initBookingForm();
-  });
+    fetch('apartments.json')
+      .then(function (r) { return r.json(); })
+      .then(function (list) {
+        APTS = list;
+        renderApartments('all');
+        initFilters();
+        initBookingForm();
+      })
+      .catch(function () {
+        var grid = qs('#apartments-grid');
+        if (grid) grid.innerHTML = '<p class="empty-note">Не удалось загрузить каталог. Обновите страницу.</p>';
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', boot);
 })();

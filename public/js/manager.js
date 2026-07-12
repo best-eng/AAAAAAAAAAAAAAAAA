@@ -1,14 +1,11 @@
 /* ============================================================
-   Панель менеджера — Уютный Квадрат
-   Данные о бронях хранятся в localStorage (ключ uk_bookings).
+   Панель менеджера — Уютный Квадрат (клиент серверного API)
+   Данные о бронях берутся из общей базы через /api/bookings.
    ============================================================ */
 (function () {
   'use strict';
 
-  var CFG = window.UK_CONFIG || {};
-  var APTS = window.APARTMENTS || [];
-  var STORAGE_KEY = 'uk_bookings';
-  var SESSION_KEY = 'uk_mgr_auth';
+  var APTS = [];
 
   var qs = function (s, c) { return (c || document).querySelector(s); };
   var qsa = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
@@ -19,44 +16,45 @@
     });
   };
 
-  var STATUS = {
-    new: 'Новая',
-    confirmed: 'Подтверждена',
-    checked_in: 'Заселён',
-    cancelled: 'Отменена'
-  };
+  var STATUS = { new: 'Новая', confirmed: 'Подтверждена', checked_in: 'Заселён', cancelled: 'Отменена' };
 
-  var state = { filter: 'all', query: '', editingId: null };
+  var state = { filter: 'all', query: '', bookings: [] };
 
-  /* ---------- Хранилище ---------- */
-  function load() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-    catch (e) { return []; }
-  }
-  function save(list) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  /* ---------- API ---------- */
+  function api(url, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    return fetch(url, opts).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (data) {
+        if (r.status === 401) { showLogin(); throw new Error('unauthorized'); }
+        if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+        return data;
+      });
+    });
   }
 
   /* ---------- Авторизация ---------- */
   function initLogin() {
-    if (sessionStorage.getItem(SESSION_KEY) === '1') return showPanel();
-    var form = qs('#login-form');
-    form.addEventListener('submit', function (e) {
+    qs('#login-form').addEventListener('submit', function (e) {
       e.preventDefault();
-      var pin = qs('#login-pin').value.trim();
-      if (pin === String(CFG.managerPin)) {
-        sessionStorage.setItem(SESSION_KEY, '1');
-        showPanel();
-      } else {
-        qs('#login-err').textContent = 'Неверный PIN. Попробуйте ещё раз.';
-        qs('#login-pin').value = '';
-      }
+      var body = JSON.stringify({ username: qs('#login-user').value, password: qs('#login-pass').value });
+      fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (res.ok) { showPanel(); }
+          else { qs('#login-err').textContent = res.d.error || 'Ошибка входа'; qs('#login-pass').value = ''; }
+        })
+        .catch(function () { qs('#login-err').textContent = 'Ошибка сети'; });
     });
+  }
+  function showLogin() {
+    qs('#mgr').hidden = true;
+    qs('#login').style.display = 'grid';
   }
   function showPanel() {
     qs('#login').style.display = 'none';
     qs('#mgr').hidden = false;
-    render();
+    refresh();
   }
 
   /* ---------- Форматирование дат ---------- */
@@ -71,6 +69,13 @@
     if (isNaN(d)) return '';
     return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) + ' ' +
            d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  /* ---------- Данные ---------- */
+  function refresh() {
+    api('/api/bookings')
+      .then(function (data) { state.bookings = data.bookings || []; render(); })
+      .catch(function () { /* 401 уже обработан, прочее игнорируем */ });
   }
 
   /* ---------- Сводка ---------- */
@@ -103,9 +108,10 @@
     var statusOpts = Object.keys(STATUS).map(function (k) {
       return '<option value="' + k + '"' + (b.status === k ? ' selected' : '') + '>' + STATUS[k] + '</option>';
     }).join('');
+    var src = b.source && b.source !== 'site' ? ' · ' + esc(b.source) : '';
     return (
-      '<tr data-id="' + b.id + '">' +
-        '<td class="cell-id">' + esc(b.id) + '<small>' + fmtDateTime(b.createdAt) + '</small></td>' +
+      '<tr data-id="' + esc(b.id) + '">' +
+        '<td class="cell-id">' + esc(b.id) + '<small>' + fmtDateTime(b.createdAt) + src + '</small></td>' +
         '<td class="cell-apt">' + esc(b.apartmentTitle || '—') + '</td>' +
         '<td class="cell-dates">' + fmtDate(b.checkin) + ' → ' + fmtDate(b.checkout) +
           '<small>' + (b.nights || 0) + ' ноч. · ' + esc(b.guests || '—') + ' гост.</small></td>' +
@@ -121,7 +127,7 @@
   }
 
   function render() {
-    var list = load();
+    var list = state.bookings;
     renderStats(list);
     var filtered = list.filter(matches);
     var tbody = qs('#mgr-tbody');
@@ -142,18 +148,25 @@
       var sel = e.target.closest('[data-action="status"]');
       if (!sel) return;
       var id = e.target.closest('tr').dataset.id;
-      var list = load();
-      var b = list.find(function (x) { return x.id === id; });
-      if (b) { b.status = sel.value; save(list); render(); toast('Статус обновлён'); }
+      api('/api/bookings/' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify({ status: sel.value }) })
+        .then(function () {
+          var b = state.bookings.find(function (x) { return x.id === id; });
+          if (b) b.status = sel.value;
+          render(); toast('Статус обновлён');
+        })
+        .catch(function (err) { if (err.message !== 'unauthorized') toast('Не удалось обновить'); });
     });
     qs('#mgr-tbody').addEventListener('click', function (e) {
       var del = e.target.closest('[data-action="del"]');
       if (!del) return;
       var id = e.target.closest('tr').dataset.id;
       if (!confirm('Удалить бронь ' + id + '?')) return;
-      save(load().filter(function (x) { return x.id !== id; }));
-      render();
-      toast('Бронь удалена');
+      api('/api/bookings/' + encodeURIComponent(id), { method: 'DELETE' })
+        .then(function () {
+          state.bookings = state.bookings.filter(function (x) { return x.id !== id; });
+          render(); toast('Бронь удалена');
+        })
+        .catch(function (err) { if (err.message !== 'unauthorized') toast('Не удалось удалить'); });
     });
   }
 
@@ -167,20 +180,21 @@
       state.filter = chip.dataset.status;
       render();
     });
-    qs('#search').addEventListener('input', function () {
-      state.query = this.value.trim();
-      render();
-    });
+    qs('#search').addEventListener('input', function () { state.query = this.value.trim(); render(); });
     qs('#btn-logout').addEventListener('click', function () {
-      sessionStorage.removeItem(SESSION_KEY);
-      location.reload();
+      fetch('/api/logout', { method: 'POST' }).then(function () { location.reload(); });
     });
     qs('#notice-x').addEventListener('click', function () { qs('#mgr-notice').style.display = 'none'; });
-    qs('#btn-demo').addEventListener('click', loadDemo);
+    qs('#btn-demo').addEventListener('click', function () {
+      api('/api/bookings/seed-demo', { method: 'POST' })
+        .then(function () { refresh(); toast('Демо-данные загружены'); })
+        .catch(function (err) { if (err.message !== 'unauthorized') toast('Не удалось загрузить демо'); });
+    });
     qs('#btn-clear').addEventListener('click', function () {
-      if (confirm('Удалить ВСЕ брони без возможности восстановления?')) {
-        save([]); render(); toast('Список очищен');
-      }
+      if (!confirm('Удалить ВСЕ брони без возможности восстановления?')) return;
+      api('/api/bookings', { method: 'DELETE' })
+        .then(function () { refresh(); toast('Список очищен'); })
+        .catch(function (err) { if (err.message !== 'unauthorized') toast('Не удалось очистить'); });
     });
     qs('#btn-export').addEventListener('click', exportCSV);
   }
@@ -189,12 +203,11 @@
   function initAddModal() {
     var modal = qs('#booking-modal');
     var sel = qs('#bm-apartment');
-    sel.innerHTML = APTS.map(function (a) {
-      return '<option value="' + a.id + '">' + esc(a.title) + ' — ' + money(a.price) + '</option>';
-    }).join('');
 
     function openModal() {
-      state.editingId = null;
+      sel.innerHTML = APTS.map(function (a) {
+        return '<option value="' + a.id + '">' + esc(a.title) + ' — ' + money(a.price) + '</option>';
+      }).join('');
       qs('#bm-title').textContent = 'Новая бронь';
       qs('#bm-form').reset();
       var today = new Date(), tmr = new Date(Date.now() + 86400000);
@@ -211,31 +224,26 @@
 
     qs('#bm-form').addEventListener('submit', function (e) {
       e.preventDefault();
-      var apt = APTS.find(function (a) { return a.id === sel.value; }) || {};
-      var ci = qs('#bm-checkin').value, co = qs('#bm-checkout').value;
-      var nights = Math.max(1, Math.round((new Date(co) - new Date(ci)) / 86400000));
-      var b = {
-        id: 'BK-' + Date.now().toString(36).toUpperCase(),
-        createdAt: new Date().toISOString(),
-        apartmentId: apt.id || '',
-        apartmentTitle: apt.title || '',
-        checkin: ci, checkout: co, nights: nights,
+      var payload = {
+        apartmentId: sel.value,
+        checkin: qs('#bm-checkin').value,
+        checkout: qs('#bm-checkout').value,
         guests: qs('#bm-guests').value,
         name: qs('#bm-name').value.trim(),
         phone: qs('#bm-phone').value.trim(),
         email: qs('#bm-email').value.trim(),
         comment: qs('#bm-comment').value.trim(),
-        total: (apt.price || 0) * nights,
         status: qs('#bm-status').value
       };
-      var list = load(); list.unshift(b); save(list);
-      closeModal(); render(); toast('Бронь добавлена');
+      api('/api/bookings', { method: 'POST', body: JSON.stringify(payload) })
+        .then(function () { closeModal(); refresh(); toast('Бронь добавлена'); })
+        .catch(function (err) { if (err.message !== 'unauthorized') toast(err.message || 'Ошибка'); });
     });
   }
 
   /* ---------- Экспорт CSV ---------- */
   function exportCSV() {
-    var list = load();
+    var list = state.bookings;
     if (!list.length) { toast('Нет данных для экспорта'); return; }
     var cols = ['id', 'createdAt', 'apartmentTitle', 'checkin', 'checkout', 'nights', 'guests', 'name', 'phone', 'email', 'total', 'status', 'comment'];
     var head = ['Номер', 'Создана', 'Квартира', 'Заезд', 'Выезд', 'Ночей', 'Гостей', 'Имя', 'Телефон', 'Email', 'Сумма', 'Статус', 'Комментарий'];
@@ -255,41 +263,6 @@
     toast('CSV выгружен');
   }
 
-  /* ---------- Демо-данные ---------- */
-  function loadDemo() {
-    var samples = [
-      { aptIdx: 0, name: 'Анна Смирнова', phone: '+7 917 123-45-67', email: 'anna@mail.ru', guests: 2, ci: 0, nights: 3, status: 'new', comment: 'Ранний заезд, если можно' },
-      { aptIdx: 2, name: 'Дмитрий Орлов', phone: '+7 927 555-10-20', email: '', guests: 4, ci: 2, nights: 2, status: 'confirmed', comment: 'С детьми, нужна кроватка' },
-      { aptIdx: 3, name: 'Мария Ковалёва', phone: '+7 905 777-88-99', email: 'maria.k@gmail.com', guests: 2, ci: 5, nights: 2, status: 'checked_in', comment: '' },
-      { aptIdx: 5, name: 'Игорь Белов', phone: '+7 900 321-00-11', email: '', guests: 3, ci: 7, nights: 4, status: 'new', comment: 'Годовщина, хочется красиво' },
-      { aptIdx: 1, name: 'Елена Ткач', phone: '+7 912 444-33-22', email: 'elena@yandex.ru', guests: 2, ci: -1, nights: 1, status: 'cancelled', comment: 'Отменил гость' }
-    ];
-    var now = Date.now();
-    var demo = samples.map(function (s, i) {
-      var apt = APTS[s.aptIdx] || APTS[0];
-      var ci = new Date(now + s.ci * 86400000);
-      var co = new Date(ci.getTime() + s.nights * 86400000);
-      return {
-        id: 'BK-DEMO' + (i + 1),
-        createdAt: new Date(now - (samples.length - i) * 3600000).toISOString(),
-        apartmentId: apt.id, apartmentTitle: apt.title,
-        checkin: ci.toISOString().slice(0, 10),
-        checkout: co.toISOString().slice(0, 10),
-        nights: s.nights, guests: s.guests,
-        name: s.name, phone: s.phone, email: s.email,
-        comment: s.comment, total: apt.price * s.nights, status: s.status
-      };
-    });
-    var list = load();
-    // не дублируем демо, если уже загружено
-    var existing = {};
-    list.forEach(function (b) { existing[b.id] = true; });
-    demo.forEach(function (b) { if (!existing[b.id]) list.unshift(b); });
-    save(list);
-    render();
-    toast('Демо-данные загружены');
-  }
-
   /* ---------- Тост ---------- */
   var toastTimer;
   function toast(msg) {
@@ -306,5 +279,11 @@
     initToolbar();
     initTableActions();
     initAddModal();
+
+    // подгружаем каталог для формы добавления
+    fetch('apartments.json').then(function (r) { return r.json(); }).then(function (l) { APTS = l; }).catch(function () {});
+
+    // проверяем, есть ли уже активная сессия
+    fetch('/api/me').then(function (r) { if (r.ok) showPanel(); });
   });
 })();
